@@ -48,4 +48,17 @@ services:
       - booking-service
       - payment-service
 
-  
+  postgres:
+    image: postgres:15
+    container_name: postgres
+  environment:
+    POSTGRES_USER: postgres
+    POSTGRES_PASSWORD: postgres
+    POSTGRES_DB: flightdb
+  volumes:
+    - postgres_data:/var/lib/postgresql/data
+  ports:
+    - "5432:5432"
+  restart: unless-stopped
+
+

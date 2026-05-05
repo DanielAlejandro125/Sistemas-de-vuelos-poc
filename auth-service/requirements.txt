@@ -2,3 +2,6 @@ fastapi
 uvicorn[standard]
 pydantic
 requests
+sqlalchemy>=1.4
+psycopg2-binary
+python-dotenv

@@ -56,25 +56,20 @@ export default function App() {
     loadFlights()
   }, [])
 
-  async function loadFlights() {
-    setLoading(true)
-    try {
-      const res = await axios.get(`${API.FLIGHTS}/flights`).catch(() => ({ data: sampleFlights() }))
-      // if API exists expect array
-      setFlights(Array.isArray(res.data) ? res.data : sampleFlights())
-    } catch (err) {
-      console.error(err)
-      setFlights(sampleFlights())
-    } finally {
-    setLoading(false)
-    }
-  }
+async function loadFlights() {
+  setLoading(true)
+  try {
+    const data = await getFlights()
+    setFlights(data)
+  } catch (err) { setFlights(sampleFlights()) }
+  setLoading(false)
+}
  
-  function sampleFlights() {
-    return [
-      { id: 'FL-100', origin: 'BOG', dest: 'MDE', price: 120.0, seats_available: 8, departure: '08:30', duration: '1h 20m' },
-      { id: 'FL-101', origin: 'BOG', dest: 'CTG', price: 180.0, seats_available: 5, departure: '10:45', duration: '2h 10m' },
-      { id: 'FL-102', origin: 'BOG', dest: 'CLO', price: 95.0, seats_available: 12, departure: '13:10', duration: '1h 05m' },
+function sampleFlights() {
+  return [
+    { id: 'FL-100', origin: 'BOG', dest: 'MDE', price: 120.0, seats_available: 8, departure: '08:30', duration: '1h 20m' },
+    { id: 'FL-101', origin: 'BOG', dest: 'CTG', price: 180.0, seats_available: 5, departure: '10:45', duration: '2h 10m' },
+    { id: 'FL-102', origin: 'BOG', dest: 'CLO', price: 95.0, seats_available: 12, departure: '13:10', duration: '1h 05m' },
     ]
   }
 
@@ -84,21 +79,20 @@ function onReserve(flight) {
     setShowConfirm(true)
 }
 
-async function confirmPayment(paymentMethod = 'card') {
+async function confirmPayment(paymentMethod='card') {
   setShowConfirm(false)
-  setMessage('Procesando pago...')
+  setMessage('Processing payment...')
   try {
-    const bookingRes = await axios.post(`${API.BOOKINGS}/book`, { user_id: 'demo', flight_id: selected.id, amount: selected.price }).catch(() => ({ data: { booking_id: 'B-'+Math.random().toString(36).slice(2,8), status: 'confirmed' } }))
-    const booking = bookingRes.data
-    
-    const payRes = await axios.post(`${API.PAYMENTS}/pay`, { booking_id: booking.booking_id || booking.bookingId || booking.id, amount: selected.price, method: paymentMethod }).catch(() => ({ data: { status: 'paid' } }))
-    setMessage('Reservación confirmada!')
-    
-    loadFlights()
+    const bookingRes = await createBooking({ user_id: 'demo', flight_id: selected.id, amount: selected.price })
+    if (bookingRes.status === 'confirmed' || bookingRes.status === 'paid') {
+      setMessage('Reservation confirmed!')
+    } else {
+      setMessage('Reservation created: ' + bookingRes.booking_id)
+    }
+    await loadFlights()
     setTimeout(()=> setMessage(null), 3000)
   } catch (err) {
-    console.error(err)
-    setMessage('Fallo al completar la reserva')
+    setMessage('Failed to complete reservation')
     setTimeout(()=> setMessage(null), 3000)
   }
 }
